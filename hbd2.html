@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!--
+Display random images from Google Image Search
+Based on:
+https://developers.google.com/image-search/v1/devguide#hiworld
+-->
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Random Google Image Search API Sample</title>
+    <script src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+      google.load('search', '1');
+
+      var resultSetSize = 8;
+      var searches = new Object();
+
+      function addPaginationLinks(searchstr) {
+      
+        // To paginate search results, use the cursor function.
+        var imageSearch = searches[searchstr];
+        var cursor = imageSearch.cursor;
+        var curPage = cursor.currentPageIndex; // check what page the app is on
+        var pagesDiv = document.createElement('div');
+        for (var i = 0; i < cursor.pages.length; i++) {
+          var page = cursor.pages[i];
+          if (curPage == i) { 
+            // If we are on the current page, then don't make a link.
+            var label = document.createTextNode(' ' + page.label + ' ');
+            pagesDiv.appendChild(label);
+          } else {
+            // Create links to other pages using gotoPage() on the searcher.
+            var link = document.createElement('a');
+            link.href="javascript:searches['"+searchstr+"'].gotoPage("+i+');';
+            link.innerHTML = page.label;
+            link.style.marginRight = '2px';
+            pagesDiv.appendChild(link);
+          }
+        }
+
+        var contentDiv = document.getElementById('content');
+        contentDiv.appendChild(pagesDiv);
+      }
+
+      function searchComplete(searchstr) {
+        var imageSearch = searches[searchstr];
+        // Check that we got results
+        if (imageSearch.results && imageSearch.results.length > 0) {
+
+          var results = imageSearch.results;
+	  var result = results[Math.floor(Math.random() * results.length)];
+	  
+          var contentDiv = document.getElementById('content');
+
+	  var s = document.createElement('div');
+	  //var s2 = document.createElement('div');
+	  s.setAttribute("class", "letter");
+	  //s2.setAttribute("class", "letter2");
+	  var newImg = document.createElement('img');
+          newImg.src=result.tbUrl;
+	  var link = document.createElement('a');
+	  link.href = result.originalContextUrl;
+	  link.appendChild(newImg);
+	  s.appendChild(link);
+	  //s.appendChild(s2);
+          contentDiv.appendChild(s);
+	  
+	  /*
+          // Loop through our results, printing them to the page.
+          for (var i = 0; i < results.length; i++) {
+            // For each result write it's title and image to the screen
+            var result = results[i];
+            var imgContainer = document.createElement('div');
+            var title = document.createElement('div');
+            var extra = document.createElement('div');
+            
+            // We use titleNoFormatting so that no HTML tags are left in the 
+            // title
+            title.innerHTML = result.titleNoFormatting;
+	    extra.innerHTML = result.url;
+	    
+            var newImg = document.createElement('img');
+	    var link = document.createElement('a');
+	    link.href = result.originalContextUrl;
+	    link.appendChild(newImg);
+
+            // There is also a result.url property which has the escaped version
+            newImg.src=result.tbUrl;
+            imgContainer.appendChild(title);
+            imgContainer.appendChild(extra);
+            imgContainer.appendChild(link);
+
+            // Put our title + image in the content
+            contentDiv.appendChild(imgContainer);
+          }
+
+          // Now add links to additional pages of search results.
+          addPaginationLinks(imageSearch);
+	  */
+        }
+      }
+
+      function doSearch(searchstr) {
+        if (searches[searchstr] == undefined) {
+	  // Create an Image Search instance.
+	  var imageSearch = new google.search.ImageSearch();
+
+	  // Set searchComplete as the callback function when a search is 
+	  // complete.  The imageSearch object will have results in it.
+	  imageSearch.setSearchCompleteCallback(this, searchComplete, [searchstr]);
+	  imageSearch.setResultSetSize(resultSetSize);
+	  imageSearch.setNoHtmlGeneration();
+
+	  // Do the search
+	  imageSearch.execute(searchstr);
+	  searches[searchstr] = imageSearch;
+	} else {
+	  // search was already run, just manage results
+	  searchComplete(searchstr);
+	}
+      }
+      function displayWord() {
+        var contentDiv = document.getElementById('content');
+	var fonts = [ 'font1', 'font2' ];
+	var colors = [ 'color1', 'color2', 'color3', 'color4', 'color5' ];
+	var bgcolors = [ 'bgcolor1', 'bgcolor2', 'bgcolor3', 'bgcolor4', 'bgcolor5' ];
+	contentDiv.innerHTML = '';
+	var letters = "HAPPY".split("");
+	var str = "";
+	for (var i = 0; i < letters.length; i++) {
+	  str += '<div class="letter '+fonts[Math.floor(Math.random() * fonts.length)]+' '+colors[Math.floor(Math.random() * colors.length)]+' '+bgcolors[Math.floor(Math.random() * bgcolors.length)]+'">'+letters[i]+'</div>';
+	}
+	contentDiv.innerHTML += str + '<br>';
+	letters = "BIRTHDAY".split("");
+	str = "";
+	for (var i = 0; i < letters.length; i++) {
+	  str += '<div class="letter '+fonts[Math.floor(Math.random() * fonts.length)]+' '+colors[Math.floor(Math.random() * colors.length)]+' '+bgcolors[Math.floor(Math.random() * bgcolors.length)]+'">'+letters[i]+'</div>';
+	}
+	contentDiv.innerHTML += str + '<br>';
+	fonts = [ 'font6' ];
+	letters = "LEONORE".split("");
+	str = "";
+	for (var i = 0; i < letters.length; i++) {
+	  str += '<div class="letter '+fonts[Math.floor(Math.random() * fonts.length)]+' '+colors[Math.floor(Math.random() * colors.length)]+' '+bgcolors[Math.floor(Math.random() * bgcolors.length)]+'">'+letters[i]+'</div>';
+	}
+        doSearch("leonardo da vinci");
+      	doSearch("euclid");	
+      	doSearch("orwell");
+      	doSearch("newton");
+      	doSearch("obelix");
+      	doSearch("rowling");
+      	doSearch("euler");
+      	contentDiv.innerHTML += '<br>' + str + '<br>';
+      }
+      
+      function onLoad() {
+        setInterval(displayWord, 1000);
+        // Include the required Google branding
+        google.search.Search.getBranding('branding');	
+      }
+      
+      google.setOnLoadCallback(onLoad);
+    </script>
+<style>
+body { font-family: Arial; border: 0 none; }
+.letter { background-color: pink; display: inline-block; height: 100px; width: 100px; margin: 1px; font-size: 6em; text-shadow: 2px 2px #ffffff; }
+.font1 { font-family: "Times New Roman", Times, serif; }
+.font2 { font-family: Georgia, serif }
+.font3 { font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif }
+.font4 { font-family: Impact, Charcoal, sans-serif }
+.font5 { font-family: "Comic Sans MS", cursive, sans-serif }
+.font6 { font-family: "Courier New", Courier, monospace }
+.color1 { color: green; }
+.color2 { color: pink; }
+.color3 { color: yellow; }
+.color4 { color: red; }
+.color5 { color: blue; }
+.bgcolor1 { background-color: green; }
+.bgcolor2 { background-color: pink; }
+.bgcolor3 { background-color: yellow; }
+.bgcolor4 { background-color: red; }
+.bgcolor5 { background-color: blue; }
+.letter img { width: 100px; height: 100px; }
+#content { text-align: center; vertical-align: top; }
+</style>
+</head>
+<body>
+    <!--
+    <div>
+      <input type="text" id="searchstr" value="leopard"/>
+      <button onclick="doSearch(document.getElementById('searchstr').value)">Search</button>
+      <button onclick="displayWord()">Again</button>
+    </div>
+    -->
+    <div id="content"></div>
+    <div id="branding"></div>
+  </body>
+</html>
