@@ -107,12 +107,6 @@ function makeLink(searchStrings, title) {
 var timer;
 
 function onLoad() {
-    
-    if (typeof window.localStorage == "undefined" || localStorage.getItem("user") != "Kai") {
-	document.body.innerHTML = "experimental!";
-	return;
-    }
-
   var query = getQueryParams(document.location.search);
   var inputs = "";
   if (query['msg']) {
