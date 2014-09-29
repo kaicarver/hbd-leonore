@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!--
+Display a birthday message using random images from Google Image Search
+Originally based on https://developers.google.com/image-search/v1/devguide#hiworld
+-->
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>Google Image Message</title>
+<script src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+
+google.load('search', '1');
+
+var resultSetSize = 8;
+var searches = new Object(); // associative array of searches
+
+function searchComplete(searchstr) {
+  var contentDiv = document.getElementById('content');
+  var imageSearch = searches[searchstr];
+  // Check that we got results
+  if (imageSearch.results && imageSearch.results.length > 0) {
+    var results = imageSearch.results;
+    // pick a result at random
+    var result = results[Math.floor(Math.random() * results.length)];
+    // display result image with link to source of the image
+    var s = document.createElement('div');
+    s.setAttribute("class", "letterimg");
+    var img = document.createElement('img');
+    img.src=result.tbUrl;
+    var link = document.createElement('a');
+    link.href = result.originalContextUrl;
+    link.setAttribute("target", "_blank");
+    link.appendChild(img);
+    s.appendChild(link);
+    contentDiv.appendChild(s);
+  } else {
+    var s = document.createElement('br');
+    contentDiv.appendChild(s);
+  }
+}
+
+function doSearch(searchstr) {
+  if (searches[searchstr] == undefined) {
+    // create an Image Search instance
+    var imageSearch = new google.search.ImageSearch();
+    // set searchComplete as the callback function when search is complete
+    imageSearch.setSearchCompleteCallback(this, searchComplete, [searchstr]);
+    imageSearch.setResultSetSize(resultSetSize);
+    imageSearch.setNoHtmlGeneration();
+    // run the search and save it
+    imageSearch.execute(searchstr);
+    searches[searchstr] = imageSearch;
+  } else {
+    // search was already run, just manage results
+    searchComplete(searchstr);
+  }
+}
+
+function displayMessage() {
+  var contentDiv = document.getElementById('content');
+  contentDiv.innerHTML = '';
+  for (var i=1; i <= document.getElementById('inputs').childNodes.length; i++) {
+    doSearch(document.getElementById('str'+i).value);
+  }
+  contentDiv.innerHTML += '<br>'
+  
+  updateLink();
+}
+
+// http://stackoverflow.com/a/1099670/153144
+function getQueryParams(qs) {
+    qs = qs.split("+").join(" ");
+    var params = {}, tokens, re = /[?&]?([^=]+)=([^&]*)/g;
+    while (tokens = re.exec(qs)) {
+        params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
+    }
+    return params;
+}
+
+function updateLink() {
+  var searchStrings = [];
+  for (var i=1; i <= document.getElementById('inputs').childNodes.length; i++) {
+    searchStrings.push(document.getElementById('str'+i).value);
+  }  
+  document.getElementById('link').href = makeUrl(searchStrings);
+}
+
+function makeUrl(searchStrings) {
+  var params = [];
+  var isMsg = true; // can use "msg" param if each search string is 1 character long
+  for (var i=0; i < searchStrings.length; i++) { if (searchStrings[i].length != 1) isMsg = false; }
+  if (isMsg) {
+    params.push('msg'+ '=' + searchStrings.join(""));
+  } else {
+    for (var i=1; i <= searchStrings.length; i++) {
+      params.push('s'+i + '=' + searchStrings[i-1]);
+    }
+  }
+  return location.pathname + '?' + params.join('&');
+}
+
+function makeLink(searchStrings, title) {
+  return '<a href="' + makeUrl(searchStrings) + '" title="' + title + '" target="_blank">x</a> ';
+}
+
+var timer;
+
+function onLoad() {
+    
+    if (typeof window.localStorage == "undefined" || localStorage.getItem("user") != "Kai") {
+	document.body.innerHTML = "experimental!";
+	return;
+    }
+
+  var query = getQueryParams(document.location.search);
+  var inputs = "";
+  if (query['msg']) {
+    var msg = query['msg'];
+    var letters = msg.split("");
+    for (var i=1; i <= letters.length; i++) {
+      inputs += '<input type="text" id="str'+i+'" class="let" value="'+letters[i-1]+'"/>';
+    }
+  } else {
+    for (var i=1; ; i++) {
+      if (query['s'+i]) {
+        inputs += '<input type="text" id="str'+i+'" class="let" value="'+query['s'+i]+'"/>';
+      } else {
+        break;
+      }
+    }
+  }
+  document.getElementById("inputs").innerHTML = inputs;
+  updateLink();
+  document.getElementById('examples').innerHTML = ' ';
+  document.getElementById('examples').innerHTML += makeLink(['c','e','l','i','a','!',''], "Letters");
+  document.getElementById('examples').innerHTML += makeLink(['camel','emu','lion','ichtyosaur','aardvark','',''], "Animals");
+  document.getElementById('examples').innerHTML += makeLink(['georg cantor','euripides','laplace','ingres','ampere','',''], "People");
+  document.getElementById('examples').innerHTML += makeLink(['camelia','Proboscidea louisianica','lily','iris','aster','',''], "Flowers");
+  document.getElementById('examples').innerHTML += makeLink(['China','Ecuador','Libya','India','Austria','',''], "Countries");
+  document.getElementById('examples').innerHTML += ' / <a href="http://www.onelook.com/?w=e*%3Aflower" title="OneLook Dictionary search" target="_blank">Lookup</a>';
+  document.getElementById('examples').innerHTML += ' / <a href="https://github.com/kaicarver/hbd-leonore" title="Source code on GitHub" target="_blank">Source</a>';
+  timer = setInterval(displayMessage, 4000);
+  // Include the required Google branding
+  google.search.Search.getBranding('branding');	
+}
+
+google.setOnLoadCallback(onLoad);
+</script>
+<style>
+body { font-family: Arial; border: 0 none; }
+.letter, .letterimg { background-color: pink; display: inline-block; height: 100px; width: 100px; margin: 1px; font-size: 5.5em; text-shadow: 2px 2px #ffffff;
+	border-radius: 50%; border: solid gray 1px;
+    transform: rotate(-90deg);
+    -webkit-animation:spin2 3s linear infinite reverse;
+    -moz-animation:spin2 3s linear infinite reverse;
+    animation:spin2 3s linear infinite reverse;
+}
+@-moz-keyframes spin2 { 100% { -moz-transform: rotate(90deg); } }
+@-webkit-keyframes spin2 { 100% { -webkit-transform: rotate(90deg); } }
+@keyframes spin2 { 100% { -webkit-transform: rotate(90deg); transform:rotate(90deg); } }
+
+.letterimg { border: solid white 0px;
+    transform: rotate(-90deg);
+    -webkit-animation:spin 3s linear infinite normal;
+    -moz-animation:spin 3s linear infinite normal;
+    animation:spin 3s linear infinite normal;
+}
+.letterimg:hover, .letter:hover {
+    -webkit-animation-play-state:paused;
+    animation-play-state:paused;
+}
+@-moz-keyframes spin { 100% { -moz-transform: rotate(90deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(90deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(90deg); transform:rotate(90deg); } }
+
+.paused{
+    -webkit-animation-play-state:paused;
+    -moz-animation-play-state:paused;
+    -o-animation-play-state:paused; 
+    animation-play-state:paused;
+}
+
+.letterimg img { width: 100px; height: 100px; border-radius: 50%; }
+.font1 { font-family: "Times New Roman", Times, serif; }
+.font2 { font-family: Georgia, serif }
+.font3 { font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif }
+.font4 { font-family: Impact, Charcoal, sans-serif }
+.font5 { font-family: "Comic Sans MS", cursive, sans-serif }
+.font6 { font-family: "Courier New", Courier, monospace }
+.color1 { color: green; }
+.color2 { color: pink; }
+.color3 { color: yellow; }
+.color4 { color: red; }
+.color5 { color: blue; }
+.bgcolor1 { background-color: green; }
+.bgcolor2 { background-color: pink; }
+.bgcolor3 { background-color: yellow; }
+.bgcolor4 { background-color: red; }
+.bgcolor5 { background-color: blue; }
+#strings { display: none; }
+#content { text-align: center; vertical-align: top; }
+#loading { position: absolute; height: 20px; width: 300px; margin: -10px 0 0 -150px; top: 50%; left: 50%; text-align: center; }
+.let { width: 120px; }
+</style>
+</head>
+<body>
+    <div id="strings">
+          <button onclick="document.getElementById('strings').style.display = 'none'; document.getElementById('showstrings').style.display = 'block'">Hide</button>
+	  <span id="inputs">
+	    <input type="text" id="str1" class="let" value=""/>
+	    <input type="text" id="str2" class="let" value=""/>
+	    <input type="text" id="str3" class="let" value=""/>
+	    <input type="text" id="str4" class="let" value=""/>
+	    <input type="text" id="str5" class="let" value=""/>
+	  </span>
+	  <a href="" id="link" title="Link to this message for sharing" target="_blank">Link</a>
+	  <span id="examples"></span>
+    </div>
+    <div id="showstrings">
+          <button onclick="document.getElementById('strings').style.display = 'block'; document.getElementById('showstrings').style.display = 'none'">Show</button>
+          <button onclick="clearInterval(timer)">Stop</button>
+    </div>
+    <div id="content"><div id="loading">Your message is being prepared...</div></div>
+    <div id="branding"></div>
+  </body>
+</html>
